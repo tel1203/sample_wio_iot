@@ -4,6 +4,8 @@ token = ARGV[0]
 
 # URL for WIO node API
 url = "https://us.wio.seeed.io/v1/node/GenericDOutD0/high_pulse/300"
+url = "https://us.wio.seeed.io/v1/node/GenericAInA0/analog"
+url = "https://us.wio.seeed.io/v1/node/GroveSpeakerD0/sound_ms/800/100"
 
 # Create HTTP request
 uri = URI.parse(url)
