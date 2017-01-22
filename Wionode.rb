@@ -1,10 +1,11 @@
 require 'net/https'
+require 'json'
 
 # GenericDOutD0
 # GroveOLED12864I2C1
 # Grove4DigitUART0
 
-module Wionode_GenericDOutD0
+module Wionode_GenericDOutD
   # GenericDOutD0/high_pulse/[msec]
   def high_pulse(msec)
     urlbase = sprintf(@urlbase+"GenericDOutD0/high_pulse/%s", msec)
@@ -13,7 +14,7 @@ module Wionode_GenericDOutD0
   
 end
 
-module Wionode_GroveOLED12864I2C1
+module Wionode_GroveOLED12864I2C
   # GroveOLED12864I2C1/clear
   def clear()
     url = @urlbase+"GroveOLED12864I2C1/clear"
@@ -29,43 +30,56 @@ module Wionode_GroveOLED12864I2C1
   end
 end
 
-module Grove4DigitUART0
+module Wionode_Grove4DigitUART
   # Grove4DigitUART0
+  def check_Grove4DigitUART()
+    port = @device.index("Grove4DigitUART")
+    raise if (port == nil)
+
+    return(port)
+  end
+
   def clear()
-    url = @urlbase+"Grove4DigitUART0/clear"
+    port = check_Grove4DigitUART()
+    url = sprintf("%sGrove4DigitUART%d/clear", @urlbase, port)
     res = access(url)
   end
 
   def point_on()
-    url = @urlbase+"Grove4DigitUART0/display_point/1"
+    port = check_Grove4DigitUART()
+    url = sprintf("%sGrove4DigitUART%d/display_point/1", @urlbase, port)
     res = access(url)
   end
 
   def point_off()
-    url = @urlbase+"Grove4DigitUART0/display_point/0"
+    port = check_Grove4DigitUART()
+    url = sprintf("%sGrove4DigitUART%d/display_point/0", @urlbase, port)
     res = access(url)
   end
 
   # chars: 0,1,2,3,4,5,6,7,8,9,A,b,C,d,E,F,V,U
   def digits(pos, chars)
-    url = sprintf(@urlbase+"Grove4DigitUART0/display_digits/%s/%s", pos, chars)
+    port = check_Grove4DigitUART()
+    url = sprintf("%sGrove4DigitUART%d/display_digits/%s/%s", @urlbase, port, pos, chars)
     res = access(url)
   end
 
   # chars: 0,1,2,3,4,5,6,7,8,9,A,b,C,d,E,F,V,U
   def digit1(pos, char)
-    url = sprintf(@urlbase+"Grove4DigitUART0/display_one_digit/%s/%s", pos, char)
+    port = check_Grove4DigitUART()
+    url = sprintf("%sGrove4DigitUART%d/display_one_digit/%s/%s", @urlbase, port, pos, chars)
     res = access(url)
   end
 
   # level: 0,2,7
   def bright(level)
-    url = sprintf(@urlbase+"Grove4DigitUART0/brightness/%s", level)
+    port = check_Grove4DigitUART()
+    url = sprintf("%sGrove4DigitUART%d/brightness/%s", @urlbase, port, level)
     res = access(url)
   end
 end
 
-module GroveGestureI2C1
+module Wionode_GroveGestureI2C
   # Grove4DigitUART0
   def gesture_read()
     url = @urlbase+"GroveGestureI2C1/motion"
@@ -75,25 +89,60 @@ module GroveGestureI2C1
   end
 end
 
-module GroveTempHumProD0
+module Wionode_GroveTempHumProD
+  def check_GroveTempHumProD()
+    port = @device.index("GroveTempHumProD")
+    raise if (port == nil)
+
+    return(port)
+  end
+
   def humidity()
-    url = @urlbase+"GroveTempHumProD0/humidity"
-    res = access(url)
+    port = check_GroveTempHumProD()
+    url = sprintf("%sGroveTempHumProD%d/humidity", @urlbase, port)
+    res = access_get(url)
+
+    data = JSON.parse(res.body)
+    return (data["humidity"])
   end
 
   def temperature()
-    url = @urlbase+"GroveTempHumProD0/temperature"
-    url = @urlbase+"GroveTempHumProD0/temperature?access_token=8c368493de470a0098231daf355ecdbc"
-    res = access(url)
+    port = check_GroveTempHumProD()
+    url = sprintf("%sGroveTempHumProD%d/temperature", @urlbase, port)
+    res = access_get(url)
+
+    data = JSON.parse(res.body)
+    return (data["celsius_degree"])
   end
 end
 
 class Wionode
-  include Grove4DigitUART0
-  include GroveGestureI2C1
-  include GroveTempHumProD0
+  include Wionode_GenericDOutD
+  include Wionode_GroveOLED12864I2C
+  include Wionode_Grove4DigitUART
+  include Wionode_GroveGestureI2C
+  include Wionode_GroveTempHumProD
 
-  def initialize(token, urlhost="us.wio.seeed.io")
+  def check_device_available(device)
+    devices = [
+      "GenericDOutD",
+      "GroveOLED12864I2C",
+      "Grove4DigitUART",
+      "GroveGestureI2C",
+      "GroveTempHumProD"
+    ]
+
+    raise if (devices.index(device) == nil)
+  end
+
+  def initialize(device0, device1, token, urlhost="us.wio.seeed.io")
+    check_device_available(device0)
+    check_device_available(device1)
+
+    @device = Array.new
+    @device[0] = device0
+    @device[1] = device1
+
     @token = token
     @urlbase = "https://"+urlhost+"/v1/node/"
   end
@@ -115,6 +164,18 @@ class Wionode
 
     req = Net::HTTP::Post.new(uri.path)
     req.set_form_data({'access_token' => @token})
+    res = http.request(req)
+  
+    return(res)
+  end
+
+  def access_get(url)
+    uri = URI.parse(url+"?access_token="+@token)
+    http = Net::HTTP.new(uri.host, uri.port)
+    http.use_ssl = true
+    http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+
+    req = Net::HTTP::Get.new(uri.request_uri)
     res = http.request(req)
   
     return(res)
