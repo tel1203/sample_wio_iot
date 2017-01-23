@@ -1,6 +1,6 @@
 require './Wionode.rb'
 
-def calc_waitingtime(hour, min)
+def calc_waitingtime(hour, min, threshold=0)
   # 平日 若葉町バス停→阪神芦屋駅
   timetable = Hash.new
   timetable["weekday"] = Hash.new
@@ -25,6 +25,7 @@ def calc_waitingtime(hour, min)
   timetable["weekday"][21] = [ 29]
   timetable["weekday"][22] = [ 12, 23, 53]
   
+  # 土日 若葉町バス停→阪神芦屋駅
                              # XX, XX, XX | XX, XX | XX, XX | XX, XX, XX | XX | XX
   timetable["weekend"][ 6] = [ 00, 25, 58,  10, 44,           33 ]
   timetable["weekend"][ 7] = [ 26,          12,               41,          50 ]
@@ -54,7 +55,7 @@ def calc_waitingtime(hour, min)
       table = timetable["weekend"]
   end
   
-  min0 = hour*60 + min
+  min0 = hour*60 + min + threshold
   
   hours =  table.keys.sort {|a, b| b <=> a }
   min_last = 0
@@ -69,29 +70,35 @@ def calc_waitingtime(hour, min)
   end
 
   if (min_last == 0) # after last bus
-      min_last = calc_waiting(0, 0) + 24*60 # suggest earlist bus at next day
+      min_last = calc_waitingtime(0, 0) + 24*60 # suggest earlist bus at next day
   end
 
   min0 = hour*60+min
   wait = min_last - min0
 
-  return (wait)
+  return (wait) # waiting time in minutes
 end
 
-# Calc waiting time
+### Calc waiting time
 t = Time.now
 #printf("%02s:%02s\n", t.hour, t.min)
 
-wait = calc_waitingtime(t.hour, t.min)
-#printf("%d\n", wait)
+wait0 = calc_waitingtime(t.hour, t.min, 10)
+#printf("%02s:%02s (%d)\n", wait/60, wait%60, wait)
+wait1 = calc_waitingtime(t.hour, t.min, 15)
+#printf("%02s:%02s (%d)\n", wait/60, wait%60, wait)
 
-# Print waiting time
+wait0 = 99 if (wait0 > 99)
+wait1 = 99 if (wait0 > 99)
+str_wait = sprintf("%02d%02d", wait0, wait1)
+
+### Print waiting time
 token = ARGV[0]
 n = Wionode.new("Grove4DigitUART", "GroveTempHumProD", token)
 
 n.bright(2)
-n.point_off()
-n.digits(0, sprintf("%04d", wait))
+n.point_on()
+n.digits(0, str_wait)
 
 #p n.temperature()
 #p n.humidity()
