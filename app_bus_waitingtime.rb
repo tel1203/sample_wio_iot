@@ -46,7 +46,6 @@ def calc_waitingtime(hour, min, threshold=0)
   timetable["weekend"][22] = [                        8 ]
   
   t = Time.now
-  
   if (t.wday != 0 and t.wday != 6) then
       # weekday
       table = timetable["weekday"]
@@ -83,13 +82,18 @@ end
 t = Time.now
 #printf("%02s:%02s\n", t.hour, t.min)
 
-wait0 = calc_waitingtime(t.hour, t.min, 10)
+hour = t.hour
+min = t.min
+
+#hour = 10
+#min = 20
+wait0 = calc_waitingtime(hour, min, 10)
 #printf("%02s:%02s (%d)\n", wait/60, wait%60, wait)
-wait1 = calc_waitingtime(t.hour, t.min, 15)
+wait1 = calc_waitingtime(hour, min, 15)
 #printf("%02s:%02s (%d)\n", wait/60, wait%60, wait)
 
-wait0 = 99 if (wait0 > 99)
-wait1 = 99 if (wait0 > 99)
+wait0 = 00 if (wait0 > 15)
+wait1 = 99 if (wait1 > 99)
 str_wait = sprintf("%02d%02d", wait0, wait1)
 
 ### Print waiting time
