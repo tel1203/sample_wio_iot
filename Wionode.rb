@@ -129,7 +129,8 @@ class Wionode
       "GroveOLED12864I2C",
       "Grove4DigitUART",
       "GroveGestureI2C",
-      "GroveTempHumProD"
+      "GroveTempHumProD",
+      nil
     ]
 
     raise if (devices.index(device) == nil)
