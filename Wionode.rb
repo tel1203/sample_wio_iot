@@ -8,7 +8,7 @@ require 'json'
 module Wionode_GenericDOutD
   # GenericDOutD0/high_pulse/[msec]
   def high_pulse(msec)
-    urlbase = sprintf(@urlbase+"GenericDOutD0/high_pulse/%s", msec)
+    url = sprintf(@urlbase+"GenericDOutD0/high_pulse/%s", msec)
     res = access(url)
   end
   
@@ -89,6 +89,29 @@ module Wionode_GroveGestureI2C
   end
 end
 
+module Wionode_GroveSoundA
+  # GroveSoundA0/sound_level
+  def sound_level()
+    url = @urlbase+"GroveSoundA0/sound_level"
+    res = access_get(url)
+
+    data = JSON.parse(res.body)
+    return (data["sound_level"])
+  end
+end
+
+module Wionode_GroveLuminanceA
+  # GroveSoundA0/sound_level
+  def luminance()
+    url = @urlbase+"GroveLuminanceA0/luminance"
+    res = access_get(url)
+
+    data = JSON.parse(res.body)
+    return (data["lux"])
+  end
+end
+
+
 module Wionode_GroveTempHumProD
   def check_GroveTempHumProD()
     port = @device.index("GroveTempHumProD")
@@ -97,8 +120,8 @@ module Wionode_GroveTempHumProD
     return(port)
   end
 
-  def humidity()
-    port = check_GroveTempHumProD()
+  def humidity(port = nil)
+    port = check_GroveTempHumProD() if (port == nil)
     url = sprintf("%sGroveTempHumProD%d/humidity", @urlbase, port)
     res = access_get(url)
 
@@ -106,8 +129,8 @@ module Wionode_GroveTempHumProD
     return (data["humidity"])
   end
 
-  def temperature()
-    port = check_GroveTempHumProD()
+  def temperature(port = nil)
+    port = check_GroveTempHumProD() if (port == nil)
     url = sprintf("%sGroveTempHumProD%d/temperature", @urlbase, port)
     res = access_get(url)
 
@@ -122,6 +145,8 @@ class Wionode
   include Wionode_Grove4DigitUART
   include Wionode_GroveGestureI2C
   include Wionode_GroveTempHumProD
+  include Wionode_GroveSoundA
+  include Wionode_GroveLuminanceA
 
   def check_device_available(device)
     devices = [
@@ -130,6 +155,8 @@ class Wionode
       "Grove4DigitUART",
       "GroveGestureI2C",
       "GroveTempHumProD",
+      "GroveSoundA",
+      "GroveLuminanceA",
       nil
     ]
 
